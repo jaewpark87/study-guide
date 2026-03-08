@@ -87,8 +87,8 @@ python db_tutorial.py
 > 지금 여러분의 파이썬 프로그램은 **클라이언트(Client)**, PostgreSQL은 **서버(Server)**입니다.
 >
 > ```
-> [클라이언트: 파이썬]  ──요청(Request)──▶  [서버: PostgreSQL]
->                      ◀──응답(Response)──
+> [Client: Python]  --- Request --->  [Server: PostgreSQL]
+>                   <--- Response ---
 > ```
 >
 > 이것은 인터넷의 기본 구조와 동일합니다! 웹 브라우저(클라이언트)가 네이버(서버)에 페이지를 요청하는 것과 같은 원리입니다. 클라이언트는 "나 이 데이터 줘!" 하고 요청하고, 서버는 데이터를 찾아서 응답합니다.
