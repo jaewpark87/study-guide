@@ -3,7 +3,7 @@
 
 ## 📄 초보자를 위한 Python + PostgreSQL 완전 정복 가이드
 
-이 문서는 이전 가이드([Docker + PostgreSQL](docker+postgres.md), [데이터 수정 & 삭제](postgres-update-delete.md))에서 배운 환경을 활용하여, **파이썬(Python) 코드로** 데이터베이스의 **모든 작업**(테이블 만들기 → 데이터 넣기 → 읽기 → 수정 → 삭제 → 테이블 삭제)을 수행하는 방법을 학습합니다.
+이 문서는 이전 가이드들([Docker + PostgreSQL](01-docker-postgres.md), [데이터 수정 & 삭제](02-sql-update-delete.md))에서 배운 환경을 활용하여, **파이썬(Python) 코드로** 데이터베이스의 **모든 작업**(테이블 만들기 → 데이터 넣기 → 읽기 → 수정 → 삭제 → 테이블 삭제)을 수행하는 방법을 학습합니다.
 
 ---
 
@@ -486,186 +486,7 @@ print("✅ 연결 종료!")
 
 ---
 
-### 10. 🏆 완성본: 전체 코드 한눈에 보기
-
-지금까지 배운 내용을 하나의 파일로 정리했습니다. `db_tutorial.py`로 저장하고 실행해 보세요!
-
-```python
-import psycopg2
-
-# ──────────────────────────────────────
-# 1. 연결 및 커서 생성
-# ──────────────────────────────────────
-conn = psycopg2.connect(
-    host="localhost",
-    port="5432",
-    database="postgres",
-    user="postgres",
-    password="mysecretpassword"
-)
-cur = conn.cursor()
-print("✅ 데이터베이스 연결 성공!\n")
-
-
-# ──────────────────────────────────────
-# 2. 테이블 만들기 (CREATE)
-# ──────────────────────────────────────
-cur.execute("DROP TABLE IF EXISTS products;")
-cur.execute("""
-    CREATE TABLE products (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        price INTEGER NOT NULL,
-        stock INTEGER DEFAULT 0
-    );
-""")
-conn.commit()
-print("✅ products 테이블 생성 완료!\n")
-
-
-# ──────────────────────────────────────
-# 3. 데이터 넣기 (INSERT)
-# ──────────────────────────────────────
-products_data = [
-    ('아메리카노', '커피', 4500, 100),
-    ('카페라떼', '커피', 5000, 80),
-    ('녹차', '차', 4000, 60),
-    ('초코케이크', '디저트', 6500, 30),
-    ('아이스티', '차', 3500, 120),
-    ('크로와상', '디저트', 4000, 45),
-]
-
-cur.executemany("""
-    INSERT INTO products (name, category, price, stock)
-    VALUES (%s, %s, %s, %s);
-""", products_data)
-
-conn.commit()
-print(f"✅ {len(products_data)}개 상품 추가 완료!\n")
-
-
-# ──────────────────────────────────────
-# 4. 데이터 읽기 (SELECT)
-# ──────────────────────────────────────
-cur.execute("SELECT * FROM products;")
-rows = cur.fetchall()
-
-print("📋 전체 상품 목록:")
-print("-" * 60)
-for row in rows:
-    print(f"  ID: {row[0]} | {row[1]:6s} | {row[2]:4s} | {row[3]:>6}원 | 재고: {row[4]}개")
-print()
-
-
-# ──────────────────────────────────────
-# 5. 데이터 수정하기 (UPDATE)
-# ──────────────────────────────────────
-cur.execute("""
-    UPDATE products SET price = 4000 WHERE name = %s;
-""", ('아메리카노',))
-
-cur.execute("""
-    UPDATE products SET stock = stock + 10 WHERE category = %s;
-""", ('디저트',))
-
-conn.commit()
-print("✅ 가격 및 재고 수정 완료!")
-
-# 수정 결과 확인
-cur.execute("SELECT * FROM products;")
-rows = cur.fetchall()
-
-print("📋 수정 후 상품 목록:")
-print("-" * 60)
-for row in rows:
-    print(f"  ID: {row[0]} | {row[1]:6s} | {row[2]:4s} | {row[3]:>6}원 | 재고: {row[4]}개")
-print()
-
-
-# ──────────────────────────────────────
-# 6. 데이터 삭제하기 (DELETE)
-# ──────────────────────────────────────
-cur.execute("DELETE FROM products WHERE name = %s;", ('아이스티',))
-conn.commit()
-print(f"✅ 아이스티 삭제 완료! ({cur.rowcount}개 행 삭제됨)")
-
-cur.execute("SELECT * FROM products;")
-rows = cur.fetchall()
-
-print("📋 삭제 후 상품 목록:")
-print("-" * 60)
-for row in rows:
-    print(f"  ID: {row[0]} | {row[1]:6s} | {row[2]:4s} | {row[3]:>6}원 | 재고: {row[4]}개")
-print()
-
-
-# ──────────────────────────────────────
-# 7. 테이블 삭제하기 (DROP TABLE)
-# ──────────────────────────────────────
-cur.execute("DROP TABLE IF EXISTS products;")
-conn.commit()
-print("✅ products 테이블 삭제 완료!\n")
-
-
-# ──────────────────────────────────────
-# 8. 연결 종료
-# ──────────────────────────────────────
-cur.close()
-conn.close()
-print("✅ 데이터베이스 연결 종료! 수고하셨습니다! 🎉")
-```
-
----
-
-### 11. 🎁 보너스: `with` 문으로 안전하게 연결 관리하기
-
-위 코드에서 `close()`를 깜빡하면 문제가 생깁니다. 파이썬의 `with` 문을 사용하면 **자동으로 정리**해줍니다.
-
-```python
-import psycopg2
-
-# with 문으로 안전하게 연결
-with psycopg2.connect(
-    host="localhost",
-    port="5432",
-    database="postgres",
-    user="postgres",
-    password="mysecretpassword"
-) as conn:
-    with conn.cursor() as cur:
-        cur.execute("SELECT * FROM products;")
-        rows = cur.fetchall()
-        for row in rows:
-            print(row)
-
-# 여기에 도달하면 커서와 연결이 자동으로 정리됩니다!
-print("✅ 자동으로 안전하게 종료됨!")
-```
-
-> 💡 **컴퓨터 공학 개념 — 컨텍스트 매니저(Context Manager)**
->
-> `with` 문은 파이썬의 **컨텍스트 매니저(Context Manager)** 패턴입니다.
->
-> ```python
-> # 이 두 코드는 같은 뜻입니다
->
-> # 방법 1: 수동 (실수 가능성 있음)
-> f = open("file.txt")
-> data = f.read()
-> f.close()  # 깜빡할 수 있음!
->
-> # 방법 2: with 문 (자동 정리)
-> with open("file.txt") as f:
->     data = f.read()
-> # close()가 자동 호출됨!
-> ```
->
-> `with` 블록을 벗어나면 에러가 발생하더라도 **자동으로 리소스를 정리**합니다. 실무에서는 거의 항상 `with` 문을 사용합니다.
-
----
-
-### 12. 🛠️ 전체 요약 (CRUD Cheat Sheet)
+### 10. 🛠️ 전체 요약 (CRUD Cheat Sheet)
 
 | 작업 | SQL | Python 코드 |
 | --- | --- | --- |
@@ -690,7 +511,7 @@ print("✅ 자동으로 안전하게 종료됨!")
 
 ---
 
-### 13. 핵심 관리 팁
+### 11. 핵심 관리 팁
 
 1. **`%s`를 항상 사용하세요**: f-string으로 SQL을 만들면 해킹(SQL Injection)에 취약합니다.
 2. **`commit()`을 잊지 마세요**: `SELECT`을 제외한 `INSERT`, `UPDATE`, `DELETE`, `CREATE`, `DROP` 후에는 반드시 `commit()`.
